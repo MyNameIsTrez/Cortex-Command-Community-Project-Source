@@ -61,7 +61,9 @@ namespace RTE {
 			}
 
 			// Now do all the additional initializing needed.
-			return doCreate ? Create() : 0;
+			int returnVal = doCreate ? Create() : 0;
+			SetReaderPointer(nullptr);
+			return returnVal;
 		}
 #pragma endregion
 
@@ -85,7 +87,6 @@ namespace RTE {
 		/// 0 means it was read successfully, and any nonzero indicates that a property of that name could not be found in this or base classes.
 		/// </returns>
 		virtual int ReadProperty(std::string propName, Reader &reader) {
-			m_Reader = &reader;
 			// Discard the value of the property which failed to read
 			reader.ReadPropValue();
 			reader.ReportError("Could not match property");
