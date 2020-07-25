@@ -27,7 +27,7 @@ namespace RTE {
 		/// <summary>
 		/// Constructor method used to instantiate a Serializable object in system memory. Create() should be called before using the object.
 		/// </summary>
-		Serializable() {}
+		Serializable() { Clear(); }
 
 		/// <summary>
 		/// Makes the Serializable object ready for use, usually after all necessary properties have been set with Create(Reader).
@@ -43,6 +43,7 @@ namespace RTE {
 		/// <param name="doCreate">Whether to do any additional initialization of the object after reading in all the properties from the Reader. This is done by calling Create().</param>
 		/// <returns>An error return value signaling success or any particular failure. Anything below 0 is an error signal.</returns>
 		virtual int Create(Reader &reader, bool checkType = true, bool doCreate = true) {
+			m_Reader = &reader;
 			if (checkType && reader.ReadPropValue() != GetClassName()) {
 				reader.ReportError("Wrong type in Reader when passed to Serializable::Create()");
 				return -1;
@@ -84,6 +85,7 @@ namespace RTE {
 		/// 0 means it was read successfully, and any nonzero indicates that a property of that name could not be found in this or base classes.
 		/// </returns>
 		virtual int ReadProperty(std::string propName, Reader &reader) {
+			m_Reader = &reader;
 			// Discard the value of the property which failed to read
 			reader.ReadPropValue();
 			reader.ReportError("Could not match property");
@@ -97,6 +99,14 @@ namespace RTE {
 		/// <returns>An error return value signaling success or any particular failure. Anything below 0 is an error signal.</returns>
 		virtual int Save(Writer &writer) const { writer.ObjectStart(GetClassName()); return 0; }
 #pragma endregion
+
+		void SetReaderPointer(Reader *reader) {
+			m_Reader = reader;
+		}
+
+		Reader * GetReaderPointer() {
+			return m_Reader;
+		}
 
 #pragma region Operator Overloads
 		/// <summary>
@@ -155,12 +165,17 @@ namespace RTE {
 		virtual const std::string & GetClassName() const = 0;
 #pragma endregion
 
+	protected:
+
+		Reader *m_Reader;
+
 	private:
 
 		/// <summary>
 		/// Clears all the member variables of this Object, effectively resetting the members of this abstraction level only.
 		/// </summary>
-		void Clear() {}
+		void Clear() { m_Reader = nullptr; }
+
 	};
 }
 #endif

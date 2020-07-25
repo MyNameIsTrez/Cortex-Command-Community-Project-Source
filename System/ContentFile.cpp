@@ -110,7 +110,11 @@ namespace RTE {
 			returnBitmap = (*itr).second;
 		} else {
 			returnBitmap = LoadAndReleaseBitmap(conversionMode); //NOTE: This takes ownership of the bitmap file
-			RTEAssert(returnBitmap, "Failed to load datafile object with following path and name:\n\n" + m_DataPath);
+			std::string errorString = "Failed to load datafile object with following path and name:\n\n" + m_DataPath;
+			if (GetReaderPointer() != nullptr) {
+				errorString = errorString + "\n\nFailed in file " + GetReaderPointer()->GetCurrentFilePath() + ", shortly before line #" + GetReaderPointer()->GetCurrentFileLineString();
+			}
+			RTEAssert(returnBitmap, errorString);
 
 			// Insert the bitmap into the map, PASSING OVER OWNERSHIP OF THE LOADED DATAFILE
 			s_LoadedBitmaps[bitDepth].insert(std::pair<std::string, BITMAP *>(m_DataPath, returnBitmap));
@@ -130,6 +134,8 @@ namespace RTE {
 		// Used for handling separators between the datafile name and the object name in .dat datafiles. NOTE: Not currently used
 		int separatorPos = m_DataPath.find('#');
 
+		
+
 		if (separatorPos == m_DataPath.length()) {
 			RTEAbort("There was no object name following first pound sign in the ContentFile's datafile path, which means there was no actual object defined. The path was:\n\n" + m_DataPath);
 		} else if (separatorPos == -1) {
@@ -137,12 +143,16 @@ namespace RTE {
 			// If the file didn't open, try using animation naming scheme of adding 000 before the extension
 			if (!pFile) {
 				int extensionPos = m_DataPath.rfind('.');
-				RTEAssert(extensionPos > 0, "Could not find file extension when trying to load and release bitmap with path and name:\n\n" + m_DataPath);
+				std::string errorString = "Could not find file extension when trying to load and release bitmap with path and name:\n\n" + m_DataPath;
+				RTEAssert(extensionPos > 0, errorString);
 				std::string pathWithoutExtension = m_DataPath;
 				pathWithoutExtension.resize(extensionPos);
-
 				pFile = pack_fopen((pathWithoutExtension + "000.bmp").c_str(), F_READ);
-				RTEAssert(pFile, "Failed to load datafile object with following path and name:\n\n" + m_DataPath);
+				errorString = "Failed to load datafile object with following path and name:\n\n" + m_DataPath;
+				if (GetReaderPointer() != nullptr) {
+					errorString = errorString + "\n\nFailed in file " + GetReaderPointer()->GetCurrentFilePath() + ", shortly before line #" + GetReaderPointer()->GetCurrentFileLineString();
+				}
+				RTEAssert(pFile, errorString);
 			}
 			// Load the bitmap then close the file stream to clean up
 			PALETTE currentPalette;
@@ -161,7 +171,11 @@ namespace RTE {
 			returnBitmap = (BITMAP *)m_DataFile->dat;
 			*/
 		}
-		RTEAssert(returnBitmap, "Failed to load datafile object with following path and name:\n\n" + m_DataPath);
+		std::string errorString = "Failed to load datafile object with following path and name:\n\n" + m_DataPath;
+		if (GetReaderPointer() != nullptr) {
+			errorString = errorString + "\n\nFailed in file " + GetReaderPointer()->GetCurrentFilePath() + ", shortly before line #" + GetReaderPointer()->GetCurrentFileLineString();
+		}
+		RTEAssert(returnBitmap, errorString);
 		return returnBitmap;
 	}
 
@@ -187,7 +201,11 @@ namespace RTE {
 		// No separator, need to separate file extension from datapath
 		if (separatorPos == -1) {
 			extensionPos = m_DataPath.rfind('.');
-			RTEAssert(extensionPos > 0, "Could not find file extension when trying to load an animation from external bitmaps with path and name:\n\n" + m_DataPath);
+			std::string errorString = "Could not find file extension when trying to load an animation from external bitmaps with path and name:\n\n" + m_DataPath;
+			if (GetReaderPointer() != nullptr) {
+				errorString = errorString + "\n\nFailed in file " + GetReaderPointer()->GetCurrentFilePath() + ", shortly before line #" + GetReaderPointer()->GetCurrentFileLineString();
+			}
+			RTEAssert(extensionPos > 0, errorString);
 			extension.assign(m_DataPath, extensionPos, m_DataPath.length() - extensionPos);
 			m_DataPath.resize(extensionPos);
 		}
@@ -199,7 +217,11 @@ namespace RTE {
 			m_DataPath = framePath;
 
 			returnBitmaps[i] = GetAsBitmap(conversionMode);
-			RTEAssert(returnBitmaps[i], "Could not get a frame of animation with path and name:\n\n" + m_DataPath);
+			std::string errorString = "Could not get a frame of animation with path and name:\n\n" + m_DataPath;
+			if (GetReaderPointer() != nullptr) {
+				errorString = errorString + "\n\nFailed in file " + GetReaderPointer()->GetCurrentFilePath() + ", shortly before line #" + GetReaderPointer()->GetCurrentFileLineString();
+			}
+			RTEAssert(returnBitmaps[i], errorString);
 		}
 		m_DataPath = originalDataPath + (extensionPos > 0 ? extension : "");
 		return returnBitmaps;
@@ -242,7 +264,11 @@ namespace RTE {
 
 				rawData = new char[fileSize];
 				int bytesRead = pack_fread(rawData, fileSize, pFile);
-				RTEAssert(bytesRead == fileSize, "Tried to read a sound file but couldn't read the same amount of data as the reported file size! The path and name were: \n\n" +m_DataPath);
+				std::string errorString = "Tried to read a sound file but couldn't read the same amount of data as the reported file size! The path and name were: \n\n" + m_DataPath;
+				if (GetReaderPointer() != nullptr) {
+					errorString = errorString + "\n\nFailed in file " + GetReaderPointer()->GetCurrentFilePath() + ", shortly before line #" + GetReaderPointer()->GetCurrentFileLineString();
+				}
+				RTEAssert(bytesRead == fileSize, errorString);
 
 				// Setup fmod info, and make sure to use mode OPENMEMORY since we're doing the loading with ContentFile instead of fmod, and we're deleting the raw data after loading it
 				FMOD_CREATESOUNDEXINFO soundInfo = {};
